@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg-primary: #040711;
+  --bg-secondary: #0a0e21;
+  --bg-tertiary: #111836;
+  --accent-aws: #ff9900;
+  --accent-aws-glow: rgba(255, 153, 0, 0.2);
+  --accent-brand: #ff9900;
+  --accent-brand-glow: rgba(255, 153, 0, 0.15);
+  --accent-success: #10b981;
+  --accent-danger: #f43f5e;
+  --accent-warning: #f59e0b;
+  --accent-info: #3b82f6;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(255, 153, 0, 0.4);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 153, 0, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(129, 140, 248, 0.03) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(10, 14, 33, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 153, 0, 0.2);
+  box-shadow: 0 12px 40px 0 rgba(255, 153, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.glass-panel-static {
+  background: rgba(10, 14, 33, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.glass-input {
+  background: rgba(4, 7, 17, 0.6);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-input:focus {
+  border-color: var(--accent-brand);
+  box-shadow: 0 0 0 2px var(--accent-brand-glow);
+  outline: none;
+}
+
+/* Custom Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Custom animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+/* Anomaly Red Alert Pulse */
+@keyframes anomalyPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4);
+    border-color: rgba(244, 63, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(244, 63, 94, 0.2);
+    border-color: rgba(244, 63, 94, 0.8);
+    background-color: rgba(244, 63, 94, 0.08);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+    border-color: rgba(244, 63, 94, 0.4);
+  }
+}
+
+.anomaly-pulse-active {
+  animation: anomalyPulse 1.8s infinite ease-in-out;
+}
+
+/* Streaming Event Log Styles */
+.live-log-container {
+  font-family: 'JetBrains Mono', monospace;
+  height: 140px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  background: rgba(4, 7, 17, 0.75);
+}
+
+.live-log-item {
+  border-left: 2px solid var(--accent-aws);
+  padding-left: 0.5rem;
+  margin-bottom: 0.25rem;
+  animation: fadeInLog 0.2s ease-out forwards;
+}
+
+.live-log-item.anomaly-log {
+  border-left-color: var(--accent-danger);
+  background: rgba(244, 63, 94, 0.05);
+  color: #fca5a5;
+}
+
+@keyframes fadeInLog {
+  from {
+    opacity: 0;
+    transform: translateX(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Digital Ticker Animation for live number changes */
+@keyframes flashWhite {
+  0% { color: var(--accent-aws); text-shadow: 0 0 10px var(--accent-aws-glow); }
+  50% { color: #ffffff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.5); }
+  100% { color: var(--accent-aws); text-shadow: none; }
+}
+
+.digital-ticker-active {
+  animation: flashWhite 0.3s ease-out;
+}
+
+/* Active Filter Buttons */
+.tab-aws-active {
+  background: linear-gradient(135deg, rgba(255, 153, 0, 0.15) 0%, rgba(255, 153, 0, 0.05) 100%);
+  border-color: var(--accent-aws) !important;
+  color: #ff9900 !important;
+  text-shadow: 0 0 10px rgba(255, 153, 0, 0.2);
+}
+
+/* Interactive tables */
+.custom-table tr {
+  transition: background-color 0.2s;
+}
+
+.custom-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Glow effects */
+.glow-aws { box-shadow: 0 0 15px rgba(255, 153, 0, 0.1); }
+.glow-brand { box-shadow: 0 0 15px rgba(255, 153, 0, 0.12); }
+
+/* Switch design */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--bg-tertiary);
+  transition: .3s;
+  border: 1px solid var(--border-color);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-secondary);
+  transition: .3s;
+}
+
+input:checked + .slider {
+  background-color: var(--accent-brand);
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+  background-color: white;
+}
+
+.slider.round {
+  border-radius: 22px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Apply Optimizing recommendation animations */
+@keyframes shrinkOut {
+  0% { opacity: 1; transform: scale(1); max-height: 100px; margin-bottom: 0.75rem; }
+  100% { opacity: 0; transform: scale(0.9); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border: none; }
+}
+
+.recommendation-optimized {
+  animation: shrinkOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+/* Real-time Indicator pulse */
+@keyframes greenPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.live-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-success);
+  border-radius: 50%;
+  animation: greenPulse 2s infinite;
+}
+
+.aws-gradient-text {
+  background: linear-gradient(135deg, #ffffff 40%, var(--accent-aws) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

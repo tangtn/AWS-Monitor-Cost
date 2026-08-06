@@ -1,0 +1,27 @@
+{
+  "name": "aws-realtime-cost-explorer",
+  "version": "1.0.0",
+  "description": "AWS Real-Time Cost Explorer & AI Optimizer with direct AWS API connection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "aws",
+    "cost-explorer",
+    "billing",
+    "realtime",
+    "express",
+    "cloudtrail"
+  ],
+  "author": "Antigravity",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-cloudtrail": "^3.1091.0",
+    "@aws-sdk/client-cost-explorer": "^3.500.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2"
+  }
+}

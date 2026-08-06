@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS Real-Time Cost Explorer & AI Optimizer</title>
+  
+  <!-- CDNs for Frameworks & Aesthetics -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Tailwind Configuration for consistent design system -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              500: '#ff9900', // AWS Orange
+              600: '#e07b00',
+              700: '#b35c00',
+            },
+            panel: 'rgba(10, 14, 33, 0.7)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Linked Custom Style Sheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col antialiased">
+
+  <!-- Header Banner -->
+  <header class="w-full glass-panel-static border-b border-slate-900/60 sticky top-0 z-40 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <!-- Logo and Brand -->
+      <div class="flex items-center gap-3.5">
+        <div class="p-2.5 bg-gradient-to-tr from-amber-600 to-orange-500 rounded-xl shadow-lg shadow-orange-500/20">
+          <i data-lucide="line-chart" class="w-7 h-7 text-white animate-pulse"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase bg-brand-500/10 text-brand-500 border border-brand-500/20 rounded-md">AWS Partner</span>
+            <div class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <span class="live-pulse"></span>
+              <span>LIVE CLOUD COST STREAM</span>
+            </div>
+          </div>
+          <h1 class="text-xl font-extrabold tracking-tight aws-gradient-text">
+            AWS Real-Time Cost Explorer
+          </h1>
+        </div>
+      </div>
+
+      <!-- Action items -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Live Connection Status Badge -->
+        <div class="flex items-center gap-2 px-3 py-2 bg-slate-950/80 border border-slate-800/80 rounded-xl shadow-inner">
+          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nguồn dữ liệu:</span>
+          <span id="data-source-badge" class="px-2 py-0.5 text-[9px] font-extrabold uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-md">SIMULATOR (MOCK)</span>
+          <button id="btn-toggle-source" class="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors" title="Đồng bộ / Chuyển đổi API AWS Thật và Simulator">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <button id="btn-open-credentials" class="flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/60 hover:border-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all duration-200" title="Cấu hình thông tin kết nối AWS API Credentials">
+          <i data-lucide="key-round" class="w-4.5 h-4.5 text-brand-500 animate-pulse"></i>
+          Cấu hình AWS Key
+        </button>
+        <button id="btn-open-import" class="flex items-center gap-2 px-4 py-2 bg-brand-500/90 hover:bg-brand-500 active:bg-brand-600 text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-md shadow-brand-500/10 hover:shadow-brand-500/20 border border-brand-500/20">
+          <i data-lucide="upload-cloud" class="w-4.5 h-4.5"></i>
+          Nạp báo cáo AWS CUR
+        </button>
+        <button id="btn-export-csv" class="flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/60 hover:border-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all duration-200">
+          <i data-lucide="download" class="w-4.5 h-4.5 text-brand-500"></i>
+          Xuất dữ liệu CSV
+        </button>
+        <button id="btn-export-pdf" class="flex items-center gap-2 px-4 py-2 bg-slate-900/80 hover:bg-slate-900 border border-slate-800/60 hover:border-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all duration-200 print:hidden">
+          <i data-lucide="printer" class="w-4.5 h-4.5 text-brand-500"></i>
+          In báo cáo chi phí
+        </button>
+        <button id="btn-reset-data" class="p-2 bg-slate-950/60 hover:bg-red-500/10 border border-slate-900 hover:border-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all duration-200" title="Khôi phục dữ liệu gốc">
+          <i data-lucide="rotate-ccw" class="w-4.5 h-4.5"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Wrapper -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 md:px-6 py-6 space-y-6">
+    
+    <!-- 1. KPI Cards Row (Overview) -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      
+      <!-- Month to date cost -->
+      <div class="glass-panel p-5 rounded-2xl glow-brand relative overflow-hidden animate-fade-in-up">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng chi phí tài khoản (Từ 01/01/2026)</p>
+            <h3 id="kpi-total-cost" class="text-3xl font-extrabold text-white mt-1.5 tracking-tight">$0.00</h3>
+            <p id="kpi-total-cost-vnd" class="text-[11px] text-slate-500 font-medium mt-0.5">~0 VND</p>
+          </div>
+          <div class="p-3 bg-brand-500/10 text-brand-500 rounded-xl">
+            <i data-lucide="credit-card" class="w-5.5 h-5.5"></i>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg w-max">
+          <i data-lucide="trending-down" class="w-3.5 h-3.5"></i>
+          <span id="kpi-cost-compare">-4.2% so với tháng trước</span>
+        </div>
+      </div>
+
+      <!-- Today accrued cost (Real-Time Live Number) -->
+      <div class="glass-panel p-5 rounded-2xl relative overflow-hidden animate-fade-in-up delay-1 border border-brand-500/20 bg-brand-500/[0.01]">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span>Chi phí hôm nay</span>
+              <span class="live-pulse"></span>
+            </p>
+            <h3 id="kpi-today-cost" class="text-3xl font-extrabold text-brand-500 mt-1.5 tracking-tight transition-all duration-100">$0.00</h3>
+            <p id="kpi-today-cost-vnd" class="text-[11px] text-brand-500/60 font-medium mt-0.5">~0 VND</p>
+          </div>
+          <div class="p-3 bg-amber-500/10 text-brand-500 rounded-xl shadow-inner">
+            <i data-lucide="zap" class="w-5.5 h-5.5 animate-bounce"></i>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 text-xs font-semibold text-slate-400 bg-slate-900/60 px-2 py-1 rounded-lg w-max border border-slate-800">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-brand-500"></i>
+          <span>Cập nhật trực tiếp theo giây</span>
+        </div>
+      </div>
+
+      <!-- Forecasted Monthly Cost -->
+      <div class="glass-panel p-5 rounded-2xl relative overflow-hidden animate-fade-in-up delay-2">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Dự kiến chi tiêu cả năm 2026</p>
+            <h3 id="kpi-forecast-cost" class="text-3xl font-extrabold text-white mt-1.5 tracking-tight">$0.00</h3>
+            <p id="kpi-forecast-cost-vnd" class="text-[11px] text-slate-500 font-medium mt-0.5">~0 VND</p>
+          </div>
+          <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl">
+            <i data-lucide="trending-up" class="w-5.5 h-5.5"></i>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3 text-xs font-semibold text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg w-max">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          <span>AI Yearly Forecast Model</span>
+        </div>
+      </div>
+
+      <!-- Anomaly alerts card -->
+      <div id="kpi-alert-card" class="glass-panel p-5 rounded-2xl relative overflow-hidden animate-fade-in-up delay-3 transition-all duration-300">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Cảnh báo bất thường</p>
+            <h3 id="kpi-alerts" class="text-3xl font-extrabold text-slate-300 mt-1.5 tracking-tight">0</h3>
+          </div>
+          <div id="kpi-alert-icon-container" class="p-3 bg-slate-800 text-slate-400 rounded-xl transition-all">
+            <i data-lucide="shield-alert" class="w-5.5 h-5.5"></i>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 mt-3.5 text-xs font-semibold text-slate-400 bg-slate-900/60 px-2 py-1 rounded-lg w-max" id="kpi-alert-subtext">
+          <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Hệ thống an toàn</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 3. AWS Budgets Card & Filter Header -->
+    <section class="grid grid-cols-1 lg:grid-cols-4 gap-5 items-center">
+      
+      <!-- AWS budget progress bar widget -->
+      <div class="lg:col-span-2 glass-panel-static p-4.5 rounded-2xl flex items-center gap-4 border border-slate-900">
+        <div class="p-3 bg-brand-500/10 text-brand-500 rounded-xl">
+          <i data-lucide="wallet" class="w-6 h-6"></i>
+        </div>
+        <div class="flex-1 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-slate-300">AWS Monthly Budget:</span>
+            <div class="flex items-center gap-1.5 font-bold">
+              <span class="text-slate-400">$</span>
+              <input id="budget-input" type="number" value="1200" class="w-16 bg-slate-950/80 border border-slate-800 text-center text-white font-extrabold rounded-lg px-1.5 py-0.5 focus:border-brand-500 focus:outline-none text-xs">
+            </div>
+          </div>
+          <!-- Progress bar -->
+          <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-900 overflow-hidden">
+            <div id="budget-progress" class="bg-gradient-to-r from-emerald-500 to-brand-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between items-center text-[10px] font-bold text-slate-500">
+            <span id="budget-spent-text">Đã tiêu: $0.00 (0.0%)</span>
+            <span id="budget-remaining-text">Còn lại: $0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Filters Group -->
+      <div class="lg:col-span-2 glass-panel-static p-4.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 border border-slate-900">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-brand-500"></i>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Phân tích</span>
+        </div>
+        
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Group By Dimension -->
+          <div class="flex items-center gap-1.5 bg-slate-950/50 p-1 rounded-xl border border-slate-900">
+            <button id="group-by-service" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-brand-500/10 border border-brand-500/20 text-brand-500 transition-all">
+              Theo Dịch vụ
+            </button>
+            <button id="group-by-region" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all">
+              Theo Vùng
+            </button>
+            <button id="group-by-tags" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition-all">
+              Theo Thẻ Tag
+            </button>
+          </div>
+
+          <!-- Time Granularity -->
+          <select id="time-granularity" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold glass-input text-slate-300">
+            <option value="hourly">Mỗi giờ</option>
+            <option value="daily" selected>Mỗi ngày</option>
+            <option value="monthly">Mỗi tháng</option>
+          </select>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 4. Charts Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- Streaming Cost Trend Chart Card -->
+      <div class="lg:col-span-2 glass-panel-static p-5 rounded-2xl flex flex-col h-[360px]">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 text-brand-500"></i>
+            <h4 class="font-extrabold text-slate-200">Top 8 dịch vụ AWS có chi phí cao nhất tháng này</h4>
+          </div>
+          <span class="text-[10px] font-semibold bg-brand-500/10 border border-brand-500/25 text-brand-500 px-2.5 py-1 rounded-lg">LIVE UPDATING</span>
+        </div>
+        <div class="flex-1 relative">
+          <canvas id="chart-cost-trend"></canvas>
+        </div>
+      </div>
+
+      <!-- Cost Distribution Doughnut -->
+      <div class="glass-panel-static p-5 rounded-2xl flex flex-col h-[360px]">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i>
+          <h4 id="chart-pie-title" class="font-extrabold text-slate-200">Phân bổ chi phí AWS theo dịch vụ</h4>
+        </div>
+        <div class="flex-1 relative flex items-center justify-center">
+          <canvas id="chart-cost-distribution"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 5. Interactive Optimization & Performance Row -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- Automated Actions Recommendation -->
+      <div class="lg:col-span-2 glass-panel-static p-5 rounded-2xl flex flex-col space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 bg-brand-500/10 rounded-xl text-brand-500 shadow-md">
+              <i data-lucide="sparkles" class="w-5.5 h-5.5 animate-pulse"></i>
+            </div>
+            <div>
+              <h4 class="font-extrabold text-slate-200 text-base">Khuyến nghị Tối ưu hóa Chi phí bởi AI</h4>
+              <p class="text-xs text-slate-500">Tự động quét các tài nguyên lãng phí & cung cấp giải pháp khắc phục tức thì</p>
+            </div>
+          </div>
+          <span class="text-xs text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Cost Analyzer Active
+          </span>
+        </div>
+        
+        <!-- Recommendations dynamically populated -->
+        <div id="recommendations-container" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          <!-- Dynamically filled by app.js -->
+        </div>
+      </div>
+
+      <!-- Resource Utilization Stats Card -->
+      <div class="glass-panel-static p-5 rounded-2xl flex flex-col h-full justify-between">
+        <div class="flex items-center gap-2 mb-3">
+          <i data-lucide="gauge" class="w-5 h-5 text-indigo-400"></i>
+          <h4 class="font-extrabold text-slate-200">Chi tiết tải tài nguyên AWS</h4>
+        </div>
+        <div class="flex-1 relative min-h-[220px]">
+          <canvas id="chart-utilization"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 6. Resource Table Section -->
+    <section class="glass-panel-static p-5 rounded-2xl space-y-5">
+      
+      <!-- Table Filter Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 class="font-extrabold text-slate-200 text-lg">Trình theo dõi tài nguyên chi tiết AWS</h3>
+          <p class="text-xs text-slate-500">Chi tiết trạng thái, hiệu năng máy chủ và chi phí phát sinh hàng ngày</p>
+        </div>
+        
+        <div class="flex items-center gap-3.5 flex-wrap">
+          <!-- Search box -->
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input id="table-search" type="text" placeholder="Tìm tên hoặc loại dịch vụ..." class="pl-10 pr-4 py-2 w-60 rounded-xl text-sm glass-input text-slate-200">
+          </div>
+          
+          <!-- Status Dropdown filter -->
+          <select id="table-status-filter" class="px-3 py-2 rounded-xl text-sm glass-input text-slate-300">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="active">Đang chạy (Active)</option>
+            <option value="stopped">Đã dừng (Stopped)</option>
+            <option value="idle">Nhàn rỗi (Idle)</option>
+            <option value="anomaly">Bất thường / Danger</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table Scrollable Area -->
+      <div class="overflow-x-auto border border-slate-900 rounded-xl bg-slate-950/20 custom-scrollbar">
+        <table class="w-full min-w-[800px] border-collapse text-left">
+          <thead>
+            <tr class="border-b border-slate-900 bg-slate-950/40 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <th class="px-4 py-3">Tên tài nguyên / ID</th>
+              <th class="px-4 py-3">Dịch vụ AWS</th>
+              <th class="px-4 py-3">Region</th>
+              <th class="px-4 py-3">Trạng thái</th>
+              <th class="px-4 py-3">Hiệu suất CPU</th>
+              <th class="px-4 py-3">Hiệu suất RAM</th>
+              <th class="px-4 py-3 text-right">Chi phí/ngày</th>
+              <th class="px-4 py-3 text-right">Sức khỏe</th>
+            </tr>
+          </thead>
+          <tbody id="resource-table-body" class="divide-y divide-slate-900/30 text-slate-300 text-sm">
+            <!-- Dynamically populated by app.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer Banner -->
+  <footer class="w-full border-t border-slate-950 bg-slate-950/40 py-5 text-center text-xs text-slate-500 mt-auto">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+      <p>© 2026 AWS Real-Time Cost Explorer Dashboard. Được xây dựng cho việc tối ưu hóa hạ tầng.</p>
+      <div class="flex items-center gap-4">
+        <a href="#" class="hover:text-slate-400 transition-colors">Điều khoản dịch vụ</a>
+        <span class="w-1 h-1 rounded-full bg-slate-800"></span>
+        <a href="#" class="hover:text-slate-400 transition-colors">Chính sách bảo mật</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= IMPORT DATA MODAL ================= -->
+  <div id="modal-import" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800/80 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl glass-panel-static animate-fade-in-up">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4.5 border-b border-slate-800 flex justify-between items-center bg-slate-950/20">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="upload-cloud" class="w-5 h-5 text-brand-500"></i>
+          <h3 class="font-extrabold text-slate-200">Nạp dữ liệu chi phí AWS (Billing/CUR)</h3>
+        </div>
+        <button id="btn-close-import" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body Form -->
+      <form id="form-import" class="p-6 space-y-5">
+        
+        <!-- Import mode selection -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chế độ nhập</label>
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
+              <input type="radio" name="import-mode" value="append" checked class="accent-brand-500">
+              <span>Ghi thêm (Append)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-slate-300">
+              <input type="radio" name="import-mode" value="replace" class="accent-brand-500">
+              <span>Ghi đè hoàn toàn (Replace)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- File upload input -->
+        <div>
+          <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tải tệp tin CUR (JSON hoặc CSV)</label>
+          <div class="border-2 border-dashed border-slate-800 hover:border-brand-500/50 rounded-xl p-5 text-center cursor-pointer transition-colors relative bg-slate-950/20">
+            <input type="file" id="import-file" accept=".json,.csv" class="absolute inset-0 opacity-0 cursor-pointer">
+            <i data-lucide="file-text" class="w-9 h-9 text-slate-500 mx-auto mb-2"></i>
+            <p class="text-sm font-semibold text-slate-300">Kéo thả tệp tin hoặc nhấp chuột để chọn</p>
+            <p class="text-xs text-slate-500 mt-1">Chấp nhận tệp .json cấu trúc CUR hoặc định dạng CSV kết xuất</p>
+          </div>
+        </div>
+
+        <!-- Raw Text Box Input -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Hoặc dán mã JSON văn bản thô</label>
+            <button type="button" id="btn-load-sample" class="text-xs text-brand-500 hover:text-brand-600 font-bold">Tải dữ liệu AWS mẫu</button>
+          </div>
+          <textarea id="import-text" rows="5" placeholder='Ví dụ: [{"name": "prod-api-ec2", "service": "Compute (EC2)", "cost": 45.2, "region": "ap-southeast-1"}]' class="w-full p-3 rounded-xl text-xs font-mono glass-input text-slate-300 block"></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+          <button type="button" id="btn-cancel-modal" class="px-4 py-2 bg-slate-800 hover:bg-slate-700/80 text-slate-300 rounded-xl text-sm font-semibold transition-all">
+            Hủy bỏ
+          </button>
+          <button type="submit" class="px-5 py-2 bg-brand-500 hover:bg-brand-600 active:bg-brand-700 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-brand-500/10">
+            Xác nhận nạp dữ liệu
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <!-- AWS Credentials Glass Modal -->
+  <div id="credentials-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md hidden transition-all duration-300 opacity-0">
+    <div class="glass-panel w-full max-w-lg p-6 rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl relative transform scale-95 transition-all duration-300">
+      <!-- Close Button -->
+      <button id="close-credentials-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors" type="button">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3 mb-5">
+        <div class="p-2.5 bg-brand-500/10 text-brand-500 rounded-xl">
+          <i data-lucide="key-round" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h4 class="text-lg font-bold text-white">Cấu hình AWS Credentials</h4>
+          <p class="text-xs text-slate-400">Nhập thông tin xác thực để kết nối trực tiếp tài khoản AWS của bạn</p>
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">AWS Access Key ID</label>
+          <input type="text" id="input-aws-access-key-id" class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-all font-mono" placeholder="AKIA...">
+        </div>
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">AWS Secret Access Key</label>
+          <div class="relative">
+            <input type="password" id="input-aws-secret-access-key" class="w-full bg-slate-950/60 border border-slate-800 rounded-xl pl-3 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 transition-all font-mono" placeholder="Nhập Secret Access Key...">
+            <button id="toggle-secret-visibility" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors" type="button">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">AWS Session Token (Tùy chọn cho tài khoản Sandbox/Temporary)</label>
+          <textarea id="input-aws-session-token" rows="4" class="w-full bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500 transition-all font-mono resize-none leading-relaxed" placeholder="Dán AWS Session Token nếu bạn sử dụng tài khoản AWS Academy / Sandbox tạm thời..."></textarea>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 mt-6">
+        <button id="btn-cancel-credentials" class="flex-1 px-4 py-2.5 border border-slate-800 text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-850 hover:text-white transition-all" type="button">Hủy bỏ</button>
+        <button id="btn-save-credentials" class="flex-1 px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-slate-950 rounded-xl text-sm font-extrabold shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all flex items-center justify-center gap-1.5" type="button">
+          <i data-lucide="link" class="w-4 h-4"></i>
+          <span>Kết nối AWS API</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Alert Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-3.5 z-50 print:hidden">
+    <!-- Toasts dynamically appended by app.js -->
+  </div>
+
+  <!-- Loaded Business App Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
